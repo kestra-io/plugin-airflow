@@ -33,7 +33,7 @@
 <p align="center" style="color:grey;"><i>Get started with Kestra in 4 minutes.</i></p>
 
 
-# Kestra Airflow Plugi
+# Kestra Airflow Plugin
 
 > A plugin integrating with Apache Airflow
 
