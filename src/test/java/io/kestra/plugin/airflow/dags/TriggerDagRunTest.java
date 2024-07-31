@@ -3,13 +3,11 @@ package io.kestra.plugin.airflow.dags;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.plugin.core.flow.WaitFor;
 import io.kestra.plugin.core.http.HttpInterface;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,11 +28,6 @@ class TriggerDagRunTest {
         TriggerDagRun task = TriggerDagRun.builder()
             .baseUrl(getBaseUrl())
             .dagId("tutorial_dag")
-            .checkFrequency(
-                WaitFor.CheckFrequency.builder()
-                    .maxDuration(Duration.ofSeconds(20))
-                    .build()
-                )
             .options(
                 HttpInterface.RequestOptions.builder()
                     .basicAuthUser(getUser())
@@ -69,12 +62,6 @@ class TriggerDagRunTest {
         TriggerDagRun task = TriggerDagRun.builder()
             .baseUrl(getBaseUrl())
             .dagId("tutorial_dag")
-            .checkFrequency(
-                WaitFor.CheckFrequency.builder()
-                    .maxDuration(Duration.ofSeconds(20))
-                    .interval(Duration.ofSeconds(10))
-                    .build()
-            )
             .wait(true)
             .options(
                 HttpInterface.RequestOptions.builder()

@@ -6,9 +6,9 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.utils.Await;
 import io.kestra.plugin.airflow.AirflowConnection;
 import io.kestra.plugin.airflow.model.DagRunResponse;
-import io.kestra.plugin.core.flow.WaitFor;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -20,6 +20,8 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static io.kestra.core.utils.Rethrow.throwSupplier;
 
 @SuperBuilder
 @ToString
@@ -98,14 +100,27 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
     private String dagId;
 
     @Schema(
-        title = "The frequency at which to check the DAG run status"
+        title = "The job ID to check status for."
+    )
+    @PluginProperty(dynamic = true)
+    private String jobId;
+
+    @Schema(
+        title = "The maximum total wait duration."
     )
     @PluginProperty
     @Builder.Default
-    private WaitFor.CheckFrequency checkFrequency = WaitFor.CheckFrequency.builder().build();
+    Duration maxDuration = Duration.ofMinutes(60);
 
     @Schema(
-        title = "Whether task should wait DAG run to complete",
+        title = "Specify how often the task should poll for the DAG run status."
+    )
+    @PluginProperty
+    @Builder.Default
+    Duration pollFrequency = Duration.ofSeconds(1);
+
+    @Schema(
+        title = "Whether task should wait for the DAG to run to completion",
         description = "Default value is false"
     )
     @PluginProperty
@@ -113,7 +128,7 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
     private Boolean wait = Boolean.FALSE;
 
     @Schema(
-        title = "Overrides the default conf payload"
+        title = "Overrides the default configuration payload"
     )
     @PluginProperty
     private Map<String, Object> body;
@@ -134,38 +149,30 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
             return outputBuilder.build();
         }
 
-        ZonedDateTime started = ZonedDateTime.now();
-        AtomicInteger iterations = new AtomicInteger();
+        DagRunResponse statusResult = Await.until(
+            throwSupplier(() -> {
+                DagRunResponse result = getDagStatus(runContext, dagId, dagRunId);
+                String state = result.getState();
 
-        while (!this.timedOut(iterations, started)) {
-            DagRunResponse statusResult = getDagStatus(runContext, dagId, dagRunId);
-            String state = statusResult.getState();
+                if ("success".equalsIgnoreCase(state) || "failed".equalsIgnoreCase(state)) {
+                    return result;
+                }
 
-            if ("success".equalsIgnoreCase(state) || "failed".equalsIgnoreCase(state)) {
-                return outputBuilder
-                    .state(state)
-                    .started(statusResult.getStartDate().toLocalDateTime())
-                    .ended(statusResult.getEndDate().toLocalDateTime())
-                    .build();
-            }
+                return null;
+            }),
+            this.pollFrequency,
+            this.maxDuration
+        );
 
-            runContext.logger().info("DAG run is {}", state);
-            iterations.getAndIncrement();
-
-            //noinspection BusyWait
-            Thread.sleep(this.checkFrequency.getInterval().toMillis());
+        if (statusResult == null) {
+            throw new IllegalStateException("DAG run did not complete within the specified timeout");
         }
 
-        throw new IllegalStateException("DAG run did not complete within the specified timeout");
-    }
-
-    private boolean timedOut(AtomicInteger iteration, ZonedDateTime start) {
-        if (this.checkFrequency != null && iteration.get() >= this.checkFrequency.getMaxIterations()) {
-            return true;
-        }
-
-        return this.checkFrequency != null &&
-            ZonedDateTime.now().toEpochSecond() > start.plus(this.checkFrequency.getMaxDuration()).toEpochSecond();
+        return outputBuilder
+            .state(statusResult.getState())
+            .started(statusResult.getStartDate().toLocalDateTime())
+            .ended(statusResult.getEndDate().toLocalDateTime())
+            .build();
     }
 
     private String buildBody(RunContext runContext) throws JsonProcessingException {
