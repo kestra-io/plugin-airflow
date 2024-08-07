@@ -1,6 +1,7 @@
 package io.kestra.plugin.airflow.dags;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -17,9 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.kestra.core.utils.Rethrow.throwSupplier;
 
@@ -100,12 +99,6 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
     private String dagId;
 
     @Schema(
-        title = "The job ID to check status for."
-    )
-    @PluginProperty(dynamic = true)
-    private String jobId;
-
-    @Schema(
         title = "The maximum total wait duration."
     )
     @PluginProperty
@@ -130,7 +123,7 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
     @Schema(
         title = "Overrides the default configuration payload"
     )
-    @PluginProperty
+    @PluginProperty(dynamic = true)
     private Map<String, Object> body;
 
     @Override
@@ -175,20 +168,20 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
             .build();
     }
 
-    private String buildBody(RunContext runContext) throws JsonProcessingException {
+    private String buildBody(RunContext runContext) throws JsonProcessingException, IllegalVariableEvaluationException {
         RunContext.FlowInfo flowInfo = runContext.flowInfo();
 
-        Map<String, Object> conf = this.body;
-
-        if (this.body == null) {
-            conf = Map.of(
-                "source", "kestra",
-                "flow", flowInfo.id(),
-                "namespace", flowInfo.namespace(),
-                "task", this.id,
-                "execution", runContext.getTriggerExecutionId()
-            );
+        if (this.body != null) {
+            return objectMapper.writeValueAsString(runContext.render(this.body));
         }
+
+        Map<String, Object> conf = Map.of(
+            "source", "kestra",
+            "flow", flowInfo.id(),
+            "namespace", flowInfo.namespace(),
+            "task", this.id,
+            "execution", runContext.getTriggerExecutionId()
+        );
 
         return objectMapper.writeValueAsString(conf);
     }
