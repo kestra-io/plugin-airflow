@@ -29,64 +29,54 @@ import static io.kestra.core.utils.Rethrow.throwSupplier;
 @NoArgsConstructor
 @Slf4j
 @Schema(
-    title = "Trigger Airflow DAG",
-    description = "Trigger an Airflow DAG run and wait for its completion."
+    title = "Trigger an Airflow DAG with custom inputs and wait for its completion.",
+    description = "Launch a DAG run, optionally wait for its completion and return the final state of the DAG run."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Basic authorization",
-            code = {
-                "  - id: trigger_dag",
-                "    type: io.kestra.plugin.airflow.TriggerDagRun",
-                "    baseUrl: http://airflow.example.com",
-                "    dagId: example_dag",
-                "    checkFrequency: PT30S",
-                "      interval: PT30S",
-                "      maxIterations: 100",
-                "      maxDuration: PT1H",
-                "    options:",
-                "      basicAuthUser: myusername",
-                "      basicAuthPassword: mypassword"
-            }
+            title = "Trigger a DAG run with custom inputs, and authenticate with basic authentication",
+            full = true,
+            code = """
+id: airflow
+namespace: company.team
+
+tasks:
+  - id: run_dag
+    type: io.kestra.plugin.airflow.dags.TriggerDagRun
+    baseUrl: http://host.docker.internal:8080
+    dagId: example_astronauts
+    wait: true
+    pollFrequency: PT1S 
+    options: 
+      basicAuthUser: "{{ secret('AIRFLOW_USERNAME') }}"
+      basicAuthPassword: "{{ secret('AIRFLOW_PASSWORD') }}"
+    body: 
+      conf:
+        source: kestra
+        namespace: "{{ flow.namespace }}"
+        flow: "{{ flow.id }}"
+        task: "{{ task.id }}"
+        execution: "{{ execution.id }}"
+"""
         ),
         @Example(
-            title = "Bearer authorization",
-            code = {
-                "  - id: trigger_dag",
-                "    type: io.kestra.plugin.airflow.TriggerDagRun",
-                "    baseUrl: http://airflow.example.com",
-                "    dagId: example_dag",
-                "    checkFrequency: PT30S",
-                "      interval: PT30S",
-                "    headers:",
-                "      authorization: 'Bearer {{ TOKEN }}'"
-            }
-        ),
-        @Example(
-            title = "Basic authorization. Custom body",
-            code = {
-                "  - id: trigger_dag",
-                "    type: io.kestra.plugin.airflow.TriggerDagRun",
-                "    baseUrl: http://airflow.example.com",
-                "    dagId: example_dag",
-                "    checkFrequency: PT30S",
-                "      interval: PT30S",
-                "    options:",
-                "      basicAuthUser: myusername",
-                "      basicAuthPassword: mypassword",
-                "    body: |",
-                "       {",
-                "         \"conf\": {",
-                "           \"source\": \"kestra\",",
-                "           \"flow\": \"{{ flow.id }}\",",
-                "           \"namespace\": \"{{ flow.namespace }}\",",
-                "           \"task\": \"{{ task.id }}\",",
-                "           \"execution\": \"{{ execution.id }}\"",
-                "           }",
-                "       }"
-            }
-        ),
+            title = "Trigger a DAG run with custom inputs, and authenticate with a Bearer token",
+            full = true,
+            code = """
+id: airflow_header_authorization
+namespace: company.team
+
+tasks:
+  - id: run_dag
+    type: io.kestra.plugin.airflow.dags.TriggerDagRun
+    baseUrl: http://host.docker.internal:8080
+    dagId: example_astronauts
+    wait: true
+    headers: 
+      authorization: "Bearer {{ secret('AIRFLOW_TOKEN') }}"
+"""
+        )
     }
 )
 public class TriggerDagRun extends AirflowConnection implements RunnableTask<TriggerDagRun.Output> {
