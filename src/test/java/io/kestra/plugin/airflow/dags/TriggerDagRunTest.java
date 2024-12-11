@@ -1,6 +1,7 @@
 package io.kestra.plugin.airflow.dags;
 
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.core.http.HttpInterface;
@@ -26,15 +27,15 @@ class TriggerDagRunTest {
         RunContext runContext = runContextFactory.of();
 
         TriggerDagRun task = TriggerDagRun.builder()
-            .baseUrl(getBaseUrl())
-            .dagId("tutorial_dag")
+            .baseUrl(Property.of(getBaseUrl()))
+            .dagId(Property.of("tutorial_dag"))
             .options(
                 HttpInterface.RequestOptions.builder()
                     .basicAuthUser(getUser())
                     .basicAuthPassword(getPassword())
                     .build()
             )
-            .body(
+            .body(Property.of(
                 Map.of(
                     "conf", Map.of(
                         "source", "kestra",
@@ -44,7 +45,7 @@ class TriggerDagRunTest {
                         "execution", "123"
                     )
                 )
-            )
+            ))
             .build();
 
         TriggerDagRun.Output runOutput = task.run(runContext);
@@ -60,16 +61,16 @@ class TriggerDagRunTest {
         RunContext runContext = runContextFactory.of();
 
         TriggerDagRun task = TriggerDagRun.builder()
-            .baseUrl(getBaseUrl())
-            .dagId("tutorial_dag")
-            .wait(true)
+            .baseUrl(Property.of(getBaseUrl()))
+            .dagId(Property.of("tutorial_dag"))
+            .wait(Property.of(true))
             .options(
                 HttpInterface.RequestOptions.builder()
                     .basicAuthUser(getUser())
                     .basicAuthPassword(getPassword())
                     .build()
             )
-            .body(
+            .body(Property.of(
                 Map.of(
                     "conf", Map.of(
                         "source", "kestra",
@@ -79,7 +80,7 @@ class TriggerDagRunTest {
                         "execution", "123"
                     )
                 )
-            )
+            ))
             .build();
 
         TriggerDagRun.Output runOutput = task.run(runContext);
