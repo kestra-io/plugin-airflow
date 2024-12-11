@@ -3,6 +3,7 @@ package io.kestra.plugin.airflow;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
@@ -42,14 +43,13 @@ public abstract class AirflowConnection extends Task {
         title = "The base URL of the Airflow instance"
     )
     @NotNull
-    @PluginProperty(dynamic = true)
-    private String baseUrl;
+    private Property<String> baseUrl;
 
     @Schema(
         title = "Adds custom headers"
     )
     @PluginProperty
-    private Map<String, String> headers;
+    private Property<Map<String, String>> headers;
 
     @Schema(
         title = "Request options"
@@ -58,7 +58,7 @@ public abstract class AirflowConnection extends Task {
     protected HttpInterface.RequestOptions options;
 
     protected DagRunResponse triggerDag(RunContext runContext, String dagId, String requestBody) throws Exception {
-        String baseUrl = runContext.render(this.baseUrl);
+        String baseUrl = runContext.render(this.baseUrl).as(String.class).orElseThrow();
         URI triggerUri = URI.create(DAG_RUNS_ENDPOINT_FORMAT.formatted(baseUrl, dagId));
 
         try (HttpClient client = getClientBuilder().build()) {
@@ -129,8 +129,9 @@ public abstract class AirflowConnection extends Task {
             requestBuilder.header("Authorization", "Basic " + auth);
         }
 
-        if (this.headers != null && !headers.isEmpty()) {
-            this.headers.forEach(requestBuilder::header);
+        var headersValue = runContext.render(this.headers).asMap(String.class, String.class);
+        if (!headersValue.isEmpty()) {
+            headersValue.forEach(requestBuilder::header);
         }
     }
 

@@ -5,6 +5,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Await;
@@ -47,11 +48,11 @@ tasks:
     baseUrl: http://host.docker.internal:8080
     dagId: example_astronauts
     wait: true
-    pollFrequency: PT1S 
-    options: 
+    pollFrequency: PT1S
+    options:
       basicAuthUser: "{{ secret('AIRFLOW_USERNAME') }}"
       basicAuthPassword: "{{ secret('AIRFLOW_PASSWORD') }}"
-    body: 
+    body:
       conf:
         source: kestra
         namespace: "{{ flow.namespace }}"
@@ -73,7 +74,7 @@ tasks:
     baseUrl: http://host.docker.internal:8080
     dagId: example_astronauts
     wait: true
-    headers: 
+    headers:
       authorization: "Bearer {{ secret('AIRFLOW_TOKEN') }}"
 """
         )
@@ -85,40 +86,35 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
         title = "The ID of the DAG to trigger"
     )
     @NotNull
-    @PluginProperty(dynamic = true)
-    private String dagId;
+    private Property<String> dagId;
 
     @Schema(
         title = "The maximum total wait duration."
     )
-    @PluginProperty
     @Builder.Default
-    Duration maxDuration = Duration.ofMinutes(60);
+    Property<Duration> maxDuration = Property.of(Duration.ofMinutes(60));
 
     @Schema(
         title = "Specify how often the task should poll for the DAG run status."
     )
-    @PluginProperty
     @Builder.Default
-    Duration pollFrequency = Duration.ofSeconds(1);
+    Property<Duration> pollFrequency = Property.of(Duration.ofSeconds(1));
 
     @Schema(
         title = "Whether task should wait for the DAG to run to completion",
         description = "Default value is false"
     )
-    @PluginProperty
     @Builder.Default
-    private Boolean wait = Boolean.FALSE;
+    private Property<Boolean> wait = Property.of(Boolean.FALSE);
 
     @Schema(
         title = "Overrides the default configuration payload"
     )
-    @PluginProperty(dynamic = true)
-    private Map<String, Object> body;
+    private Property<Map<String, Object>> body;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        String dagId = runContext.render(this.dagId);
+        String dagId = runContext.render(this.dagId).as(String.class).orElseThrow();
 
         DagRunResponse triggerResult = triggerDag(runContext, dagId, buildBody(runContext));
         String dagRunId = triggerResult.getDagRunId();
@@ -128,7 +124,7 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
             .dagRunId(dagRunId)
             .state(triggerResult.getState());
 
-        if (this.wait.equals(Boolean.FALSE)) {
+        if (runContext.render(this.wait).as(Boolean.class).orElseThrow().equals(Boolean.FALSE)) {
             return outputBuilder.build();
         }
 
@@ -143,8 +139,8 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
 
                 return null;
             }),
-            this.pollFrequency,
-            this.maxDuration
+            runContext.render(this.pollFrequency).as(Duration.class).orElseThrow(),
+            runContext.render(this.maxDuration).as(Duration.class).orElseThrow()
         );
 
         if (statusResult == null) {
@@ -161,8 +157,9 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
     private String buildBody(RunContext runContext) throws JsonProcessingException, IllegalVariableEvaluationException {
         RunContext.FlowInfo flowInfo = runContext.flowInfo();
 
-        if (this.body != null) {
-            return objectMapper.writeValueAsString(runContext.render(this.body));
+        var renderedBody = runContext.render(this.body).asMap(String.class, Object.class);
+        if (!renderedBody.isEmpty()) {
+            return objectMapper.writeValueAsString(renderedBody);
         }
 
         Map<String, Object> conf = Map.of(
