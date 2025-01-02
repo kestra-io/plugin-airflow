@@ -1,10 +1,11 @@
 package io.kestra.plugin.airflow.dags;
 
+import io.kestra.core.http.client.configurations.BasicAuthConfiguration;
+import io.kestra.core.http.client.configurations.HttpConfiguration;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.plugin.core.http.HttpInterface;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -30,9 +31,12 @@ class TriggerDagRunTest {
             .baseUrl(Property.of(getBaseUrl()))
             .dagId(Property.of("tutorial_dag"))
             .options(
-                HttpInterface.RequestOptions.builder()
-                    .basicAuthUser(getUser())
-                    .basicAuthPassword(getPassword())
+                HttpConfiguration.builder()
+                    .auth(BasicAuthConfiguration.builder()
+                        .username(getUser())
+                        .password(getPassword())
+                        .build()
+                    )
                     .build()
             )
             .body(Property.of(
@@ -65,9 +69,12 @@ class TriggerDagRunTest {
             .dagId(Property.of("tutorial_dag"))
             .wait(Property.of(true))
             .options(
-                HttpInterface.RequestOptions.builder()
-                    .basicAuthUser(getUser())
-                    .basicAuthPassword(getPassword())
+                HttpConfiguration.builder()
+                    .auth(BasicAuthConfiguration.builder()
+                        .username(getUser())
+                        .password(getPassword())
+                        .build()
+                    )
                     .build()
             )
             .body(Property.of(

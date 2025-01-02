@@ -1,14 +1,16 @@
 package io.kestra.plugin.airflow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.http.HttpRequest;
+import io.kestra.core.http.HttpResponse;
+import io.kestra.core.http.client.HttpClient;
+import io.kestra.core.http.client.configurations.HttpConfiguration;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.airflow.model.DagRunResponse;
-import io.kestra.plugin.core.http.HttpInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
@@ -19,10 +21,6 @@ import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.Base64;
 import java.util.Map;
 
 @SuperBuilder
@@ -55,7 +53,7 @@ public abstract class AirflowConnection extends Task {
         title = "Request options"
     )
     @PluginProperty
-    protected HttpInterface.RequestOptions options;
+    protected HttpConfiguration options;
 
     protected DagRunResponse triggerDag(RunContext runContext, String dagId, String requestBody) throws Exception {
         String baseUrl = runContext.render(this.baseUrl).as(String.class).orElseThrow();
@@ -63,16 +61,17 @@ public abstract class AirflowConnection extends Task {
 
         try (HttpClient client = getClientBuilder().build()) {
             HttpRequest request = getRequestBuilder(runContext, triggerUri)
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .method("POST")
+                .body(HttpRequest.StringRequestBody.builder().content(requestBody).build())
                 .build();
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<DagRunResponse> response = client.request(request, DagRunResponse.class);
 
-            if (response.statusCode() != 200) {
-                throw new IllegalStateException("Failed to trigger DAG: " + response.body());
+            if (response.getStatus().getCode() != 200) {
+                throw new IllegalStateException("Failed to trigger DAG: " + response.getBody());
             }
 
-            return objectMapper.readValue(response.body(), DagRunResponse.class);
+            return response.getBody();
         }
     }
 
@@ -81,58 +80,27 @@ public abstract class AirflowConnection extends Task {
 
         try (HttpClient client = getClientBuilder().build()) {
             HttpRequest statusRequest = getRequestBuilder(runContext, statusUri)
-                .GET()
                 .build();
 
-            HttpResponse<String> response = client.send(statusRequest, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<DagRunResponse> response = client.request(statusRequest, DagRunResponse.class);
 
-            if (response.statusCode() != 200) {
-                throw new IllegalStateException("Failed to get DAG run status: " + response.body());
+            if (response.getStatus().getCode() != 200) {
+                throw new IllegalStateException("Failed to get DAG run status: " + response.getBody());
             }
 
-            return objectMapper.readValue(response.body(), DagRunResponse.class);
+            return response.getBody();
         }
     }
 
-    private HttpClient.Builder getClientBuilder() {
-        HttpClient.Builder clientBuilder = HttpClient.newBuilder();
+    private io.kestra.core.http.client.HttpClient.HttpClientBuilder getClientBuilder() {
+        return io.kestra.core.http.client.HttpClient.builder()
+            .configuration(this.options);
 
-        if (this.options != null && this.options.getConnectTimeout() != null) {
-            clientBuilder.connectTimeout(options.getConnectTimeout());
-        }
-
-        return clientBuilder;
     }
 
-    private HttpRequest.Builder getRequestBuilder(RunContext runContext, URI uri) throws IllegalVariableEvaluationException {
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+    private HttpRequest.HttpRequestBuilder  getRequestBuilder(RunContext runContext, URI uri) {
+        return HttpRequest.builder()
             .uri(uri)
-            .header("Content-Type", JSON_CONTENT_TYPE);
-
-        setupCustomHeaders(runContext, requestBuilder);
-
-        return requestBuilder;
+            .addHeader("Content-Type", JSON_CONTENT_TYPE);
     }
-
-    private void setupCustomHeaders(RunContext runContext, HttpRequest.Builder requestBuilder) throws IllegalVariableEvaluationException {
-        if (this.options != null && this.options.getBasicAuthUser() != null && this.options.getBasicAuthPassword() != null) {
-            String authorizationString = "%s:%s"
-                .formatted(
-                    runContext.render(this.options.getBasicAuthUser()),
-                    runContext.render(this.options.getBasicAuthPassword())
-                );
-
-            String auth = Base64
-                .getEncoder()
-                .encodeToString(authorizationString.getBytes());
-
-            requestBuilder.header("Authorization", "Basic " + auth);
-        }
-
-        var headersValue = runContext.render(this.headers).asMap(String.class, String.class);
-        if (!headersValue.isEmpty()) {
-            headersValue.forEach(requestBuilder::header);
-        }
-    }
-
 }
