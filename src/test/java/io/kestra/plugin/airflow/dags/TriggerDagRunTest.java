@@ -98,12 +98,12 @@ class TriggerDagRunTest {
         assertThat(runOutput.getState(), is(equalToIgnoringCase("success")));
     }
 
-    private static String getPassword() {
-        return "airflow";
+    private static Property<String> getPassword() {
+        return Property.of("airflow");
     }
 
-    private static String getUser() {
-        return "airflow";
+    private static Property<String> getUser() {
+        return Property.of("airflow");
     }
 
     private static String getBaseUrl() {
