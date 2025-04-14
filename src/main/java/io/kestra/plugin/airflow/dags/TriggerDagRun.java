@@ -30,8 +30,8 @@ import static io.kestra.core.utils.Rethrow.throwSupplier;
 @NoArgsConstructor
 @Slf4j
 @Schema(
-    title = "Trigger an Airflow DAG with custom inputs and wait for its completion.",
-    description = "Launch a DAG run, optionally wait for its completion and return the final state of the DAG run."
+    title = "Trigger an Airflow DAG with custom inputs.",
+    description = "Launch a DAG run, optionally wait for its completion, and return the final state of the DAG run."
 )
 @Plugin(
     examples = {
