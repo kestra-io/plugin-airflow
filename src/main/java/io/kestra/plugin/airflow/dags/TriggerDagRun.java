@@ -92,20 +92,20 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
         title = "The maximum total wait duration."
     )
     @Builder.Default
-    Property<Duration> maxDuration = Property.of(Duration.ofMinutes(60));
+    Property<Duration> maxDuration = Property.ofValue(Duration.ofMinutes(60));
 
     @Schema(
         title = "Specify how often the task should poll for the DAG run status."
     )
     @Builder.Default
-    Property<Duration> pollFrequency = Property.of(Duration.ofSeconds(1));
+    Property<Duration> pollFrequency = Property.ofValue(Duration.ofSeconds(1));
 
     @Schema(
         title = "Whether task should wait for the DAG to run to completion",
         description = "Default value is false"
     )
     @Builder.Default
-    private Property<Boolean> wait = Property.of(Boolean.FALSE);
+    private Property<Boolean> wait = Property.ofValue(Boolean.FALSE);
 
     @Schema(
         title = "Overrides the default configuration payload"

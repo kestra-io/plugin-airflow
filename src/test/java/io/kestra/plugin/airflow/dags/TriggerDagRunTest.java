@@ -28,8 +28,8 @@ class TriggerDagRunTest {
         RunContext runContext = runContextFactory.of();
 
         TriggerDagRun task = TriggerDagRun.builder()
-            .baseUrl(Property.of(getBaseUrl()))
-            .dagId(Property.of("tutorial_dag"))
+            .baseUrl(Property.ofValue(getBaseUrl()))
+            .dagId(Property.ofValue("tutorial_dag"))
             .options(
                 HttpConfiguration.builder()
                     .auth(BasicAuthConfiguration.builder()
@@ -39,7 +39,7 @@ class TriggerDagRunTest {
                     )
                     .build()
             )
-            .body(Property.of(
+            .body(Property.ofValue(
                 Map.of(
                     "conf", Map.of(
                         "source", "kestra",
@@ -65,9 +65,9 @@ class TriggerDagRunTest {
         RunContext runContext = runContextFactory.of();
 
         TriggerDagRun task = TriggerDagRun.builder()
-            .baseUrl(Property.of(getBaseUrl()))
-            .dagId(Property.of("tutorial_dag"))
-            .wait(Property.of(true))
+            .baseUrl(Property.ofValue(getBaseUrl()))
+            .dagId(Property.ofValue("tutorial_dag"))
+            .wait(Property.ofValue(true))
             .options(
                 HttpConfiguration.builder()
                     .auth(BasicAuthConfiguration.builder()
@@ -77,7 +77,7 @@ class TriggerDagRunTest {
                     )
                     .build()
             )
-            .body(Property.of(
+            .body(Property.ofValue(
                 Map.of(
                     "conf", Map.of(
                         "source", "kestra",
@@ -99,11 +99,11 @@ class TriggerDagRunTest {
     }
 
     private static Property<String> getPassword() {
-        return Property.of("airflow");
+        return Property.ofValue("airflow");
     }
 
     private static Property<String> getUser() {
-        return Property.of("airflow");
+        return Property.ofValue("airflow");
     }
 
     private static String getBaseUrl() {
