@@ -3,7 +3,7 @@ set -euo pipefail
 
 docker compose -f docker-compose-ci.yml up -d
 
-echo "waiting for Airflow health endpoint..."
+echo "waiting for Airflow health endpoint"
 timeout 180 bash -c '
   until curl --silent --fail http://localhost:8082/health >/dev/null; do
     sleep 3
@@ -11,7 +11,7 @@ timeout 180 bash -c '
 '
 echo "Airflow is healthy"
 
-echo "waiting for tutorial_dag to be available..."
+echo "waiting for tutorial_dag to be available"
 timeout 120 bash -c '
   until curl -s -u airflow:airflow --fail \
     http://localhost:8082/api/v1/dags/tutorial_dag >/dev/null; do
@@ -26,7 +26,7 @@ curl -s -u airflow:airflow -X PATCH \
   -d '{"is_paused": false}' \
   http://localhost:8082/api/v1/dags/tutorial_dag >/dev/null
 
-# Wait until API confirms unpaused
+# we wait until API confirms unpaused
 timeout 60 bash -c '
   until [ "$(curl -s -u airflow:airflow http://localhost:8082/api/v1/dags/tutorial_dag | jq -r .is_paused)" = "false" ]; do
     sleep 2
