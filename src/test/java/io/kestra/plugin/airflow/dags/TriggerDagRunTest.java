@@ -1,13 +1,13 @@
 package io.kestra.plugin.airflow.dags;
 
+import com.google.common.collect.ImmutableMap;
+import io.kestra.core.context.TestRunContextFactory;
 import io.kestra.core.http.client.configurations.BasicAuthConfiguration;
 import io.kestra.core.http.client.configurations.HttpConfiguration;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.runners.RunContextFactory;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -16,12 +16,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
-@Disabled(
-    "For CI/CD"
-)
 class TriggerDagRunTest {
+    private static final String BASE_URL = "http://localhost:8082";
+    private static final String USER = "airflow";
+    private static final String PASSWORD = "airflow";
+
     @Inject
-    private RunContextFactory runContextFactory;
+    private TestRunContextFactory runContextFactory;
 
     @Test
     void run() throws Exception {
@@ -56,13 +57,12 @@ class TriggerDagRunTest {
 
         assertThat(runOutput.getDagRunId(), is(notNullValue()));
         assertThat(runOutput.getState(), is(notNullValue()));
-
         assertThat(runOutput.getState(), is(equalToIgnoringCase("queued")));
     }
 
     @Test
     void waitForComplete() throws Exception {
-        RunContext runContext = runContextFactory.of();
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         TriggerDagRun task = TriggerDagRun.builder()
             .baseUrl(Property.ofValue(getBaseUrl()))
@@ -94,19 +94,18 @@ class TriggerDagRunTest {
 
         assertThat(runOutput.getDagRunId(), is(notNullValue()));
         assertThat(runOutput.getState(), is(notNullValue()));
-
         assertThat(runOutput.getState(), is(equalToIgnoringCase("success")));
     }
 
     private static Property<String> getPassword() {
-        return Property.ofValue("airflow");
+        return Property.ofValue(PASSWORD);
     }
 
     private static Property<String> getUser() {
-        return Property.ofValue("airflow");
+        return Property.ofValue(USER);
     }
 
     private static String getBaseUrl() {
-        return "http://localhost:8080";
+        return BASE_URL;
     }
 }

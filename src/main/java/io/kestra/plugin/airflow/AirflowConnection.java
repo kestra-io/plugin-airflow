@@ -59,7 +59,7 @@ public abstract class AirflowConnection extends Task {
         String baseUrl = runContext.render(this.baseUrl).as(String.class).orElseThrow();
         URI triggerUri = URI.create(DAG_RUNS_ENDPOINT_FORMAT.formatted(baseUrl, dagId));
 
-        try (HttpClient client = getClientBuilder().build()) {
+        try (HttpClient client = getClientBuilder(runContext).build()) {
             HttpRequest request = getRequestBuilder(runContext, triggerUri)
                 .method("POST")
                 .body(HttpRequest.StringRequestBody.builder().content(requestBody).build())
@@ -76,9 +76,10 @@ public abstract class AirflowConnection extends Task {
     }
 
     protected DagRunResponse getDagStatus(RunContext runContext, String dagId, String dagRunId) throws Exception {
-        URI statusUri = URI.create(DAG_RUNS_ENDPOINT_FORMAT.formatted(getBaseUrl(), dagId) + "/" + dagRunId);
+        String baseUrl = runContext.render(this.baseUrl).as(String.class).orElseThrow();
+        URI statusUri = URI.create(DAG_RUNS_ENDPOINT_FORMAT.formatted(baseUrl, dagId) + "/" + dagRunId);
 
-        try (HttpClient client = getClientBuilder().build()) {
+        try (HttpClient client = getClientBuilder(runContext).build()) {
             HttpRequest statusRequest = getRequestBuilder(runContext, statusUri)
                 .build();
 
@@ -92,13 +93,13 @@ public abstract class AirflowConnection extends Task {
         }
     }
 
-    private io.kestra.core.http.client.HttpClient.HttpClientBuilder getClientBuilder() {
+    private io.kestra.core.http.client.HttpClient.HttpClientBuilder getClientBuilder(RunContext runContext) {
         return io.kestra.core.http.client.HttpClient.builder()
-            .configuration(this.options);
-
+            .configuration(this.options)
+            .runContext(runContext);
     }
 
-    private HttpRequest.HttpRequestBuilder  getRequestBuilder(RunContext runContext, URI uri) {
+    private HttpRequest.HttpRequestBuilder getRequestBuilder(RunContext runContext, URI uri) {
         return HttpRequest.builder()
             .uri(uri)
             .addHeader("Content-Type", JSON_CONTENT_TYPE);
