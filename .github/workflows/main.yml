@@ -27,6 +27,16 @@ on:
         options:
           - "true"
           - "false"
+permissions:
+  contents: write
+  checks: write
+  actions: read
+  pull-requests: write
+permissions:
+  contents: write
+  checks: write
+  actions: read
+  pull-requests: write
 
 jobs:
   check:
