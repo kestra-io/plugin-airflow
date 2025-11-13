@@ -18,7 +18,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
 import java.util.Map;
@@ -28,7 +27,6 @@ import java.util.Map;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Slf4j
 public abstract class AirflowConnection extends Task {
 
     protected final static ObjectMapper objectMapper = JacksonMapper.ofJson();
