@@ -1,0 +1,8 @@
+group: io.kestra.plugin.airflow.dags
+name: "dags"
+title: "Dags"
+description: "This sub-group of plugins contains tasks for integrating and triggering Apache Airflow DAGs."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
