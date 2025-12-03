@@ -1,8 +1,8 @@
 group: io.kestra.plugin.airflow
 name: "airflow"
 title: "Airflow"
-description: "This sub-group of plugins contains tasks for using Apache Airflow."
-body: ""
+description: "Tasks that let Kestra workflows interact with Apache Airflow."
+body: "Use these plugins to call into existing Airflow deployments from Kestra, bridging workflows without migrating DAGs. Configure the Airflow REST API baseUrl, provide auth via custom headers or HTTP options, and reuse Airflow DAGs while coordinating upstream and downstream steps."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"
