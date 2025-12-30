@@ -1,6 +1,6 @@
 @PluginSubGroup(
     description = "This sub-group of plugins contains tasks for using Apache Airflow.",
-    categories = { PluginSubGroup.PluginCategory.OTHER }
+        categories = { PluginSubGroup.PluginCategory.DATA }
 )
 package io.kestra.plugin.airflow;
 
