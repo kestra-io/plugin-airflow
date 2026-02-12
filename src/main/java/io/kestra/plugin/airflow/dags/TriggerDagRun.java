@@ -27,8 +27,8 @@ import static io.kestra.core.utils.Rethrow.throwSupplier;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger an Airflow DAG with custom inputs.",
-    description = "Launch a DAG run, optionally wait for its completion, and return the final state of the DAG run."
+    title = "Trigger an Airflow DAG run",
+    description = "Starts a DAG run via the Airflow REST API. Can wait until the run reaches success or failed using 1s polling and a 60m timeout by default; throws if the timeout is exceeded. If no body is provided, sends a default conf with Flow, Namespace, task, and execution identifiers."
 )
 @Plugin(
     examples = {
@@ -80,32 +80,35 @@ tasks:
 public class TriggerDagRun extends AirflowConnection implements RunnableTask<TriggerDagRun.Output> {
 
     @Schema(
-        title = "The ID of the DAG to trigger"
+        title = "Airflow DAG ID"
     )
     @NotNull
     private Property<String> dagId;
 
     @Schema(
-        title = "The maximum total wait duration."
+        title = "Maximum wait duration",
+        description = "Default is 60 minutes; used only when wait is true."
     )
     @Builder.Default
     Property<Duration> maxDuration = Property.ofValue(Duration.ofMinutes(60));
 
     @Schema(
-        title = "Specify how often the task should poll for the DAG run status."
+        title = "Status poll interval",
+        description = "Default is 1 second; used only when wait is true."
     )
     @Builder.Default
     Property<Duration> pollFrequency = Property.ofValue(Duration.ofSeconds(1));
 
     @Schema(
-        title = "Whether task should wait for the DAG to run to completion",
-        description = "Default value is false"
+        title = "Wait for completion",
+        description = "Default is false; when true, polls until the run is success or failed."
     )
     @Builder.Default
     private Property<Boolean> wait = Property.ofValue(Boolean.FALSE);
 
     @Schema(
-        title = "Overrides the default configuration payload"
+        title = "Custom DAG run payload",
+        description = "JSON body sent to Airflow's conf; overrides the default metadata payload."
     )
     private Property<Map<String, Object>> body;
 
@@ -174,12 +177,12 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
     @Builder
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "DAG ID"
+            title = "Airflow DAG ID"
         )
         private String dagId;
 
         @Schema(
-            title = "DAG run ID"
+            title = "Airflow DAG run ID"
         )
         private String dagRunId;
 
