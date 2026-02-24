@@ -1,6 +1,6 @@
 group: io.kestra.plugin.airflow.dags
 name: "dags"
-title: "Dags"
+title: "Airflow Dags"
 description: "Tasks that trigger and monitor Apache Airflow DAG runs."
 body: "Trigger DAG executions through Airflow's REST API with required baseUrl and dagId, optionally pass a custom body payload for conf, and authenticate via headers or HTTP options such as basic auth or bearer tokens. Enable wait with pollFrequency and maxDuration to track completion and return run details including dagRunId, state, started, and ended timestamps."
 videos: []
