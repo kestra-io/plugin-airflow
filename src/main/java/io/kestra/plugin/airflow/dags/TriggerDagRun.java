@@ -1,6 +1,11 @@
 package io.kestra.plugin.airflow.dags;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Map;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -10,14 +15,11 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.Await;
 import io.kestra.plugin.airflow.AirflowConnection;
 import io.kestra.plugin.airflow.model.DagRunResponse;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Map;
 
 import static io.kestra.core.utils.Rethrow.throwSupplier;
 
@@ -36,44 +38,44 @@ import static io.kestra.core.utils.Rethrow.throwSupplier;
             title = "Trigger a DAG run with custom inputs, and authenticate with basic authentication",
             full = true,
             code = """
-id: airflow
-namespace: company.team
+                id: airflow
+                namespace: company.team
 
-tasks:
-  - id: run_dag
-    type: io.kestra.plugin.airflow.dags.TriggerDagRun
-    baseUrl: http://host.docker.internal:8080
-    dagId: example_astronauts
-    wait: true
-    pollFrequency: PT1S
-    options:
-      basicAuthUser: "{{ secret('AIRFLOW_USERNAME') }}"
-      basicAuthPassword: "{{ secret('AIRFLOW_PASSWORD') }}"
-    body:
-      conf:
-        source: kestra
-        namespace: "{{ flow.namespace }}"
-        flow: "{{ flow.id }}"
-        task: "{{ task.id }}"
-        execution: "{{ execution.id }}"
-"""
+                tasks:
+                  - id: run_dag
+                    type: io.kestra.plugin.airflow.dags.TriggerDagRun
+                    baseUrl: http://host.docker.internal:8080
+                    dagId: example_astronauts
+                    wait: true
+                    pollFrequency: PT1S
+                    options:
+                      basicAuthUser: "{{ secret('AIRFLOW_USERNAME') }}"
+                      basicAuthPassword: "{{ secret('AIRFLOW_PASSWORD') }}"
+                    body:
+                      conf:
+                        source: kestra
+                        namespace: "{{ flow.namespace }}"
+                        flow: "{{ flow.id }}"
+                        task: "{{ task.id }}"
+                        execution: "{{ execution.id }}"
+                """
         ),
         @Example(
             title = "Trigger a DAG run with custom inputs, and authenticate with a Bearer token",
             full = true,
             code = """
-id: airflow_header_authorization
-namespace: company.team
+                id: airflow_header_authorization
+                namespace: company.team
 
-tasks:
-  - id: run_dag
-    type: io.kestra.plugin.airflow.dags.TriggerDagRun
-    baseUrl: http://host.docker.internal:8080
-    dagId: example_astronauts
-    wait: true
-    headers:
-      authorization: "Bearer {{ secret('AIRFLOW_TOKEN') }}"
-"""
+                tasks:
+                  - id: run_dag
+                    type: io.kestra.plugin.airflow.dags.TriggerDagRun
+                    baseUrl: http://host.docker.internal:8080
+                    dagId: example_astronauts
+                    wait: true
+                    headers:
+                      authorization: "Bearer {{ secret('AIRFLOW_TOKEN') }}"
+                """
         )
     }
 )
@@ -129,7 +131,8 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
         }
 
         DagRunResponse statusResult = Await.until(
-            throwSupplier(() -> {
+            throwSupplier(() ->
+            {
                 DagRunResponse result = getDagStatus(runContext, dagId, dagRunId);
                 String state = result.getState();
 

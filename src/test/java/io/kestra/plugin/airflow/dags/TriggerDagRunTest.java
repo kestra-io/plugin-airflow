@@ -1,16 +1,19 @@
 package io.kestra.plugin.airflow.dags;
 
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+
 import com.google.common.collect.ImmutableMap;
+
 import io.kestra.core.context.TestRunContextFactory;
 import io.kestra.core.http.client.configurations.BasicAuthConfiguration;
 import io.kestra.core.http.client.configurations.HttpConfiguration;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
 
-import java.util.Map;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -33,24 +36,27 @@ class TriggerDagRunTest {
             .dagId(Property.ofValue("tutorial_dag"))
             .options(
                 HttpConfiguration.builder()
-                    .auth(BasicAuthConfiguration.builder()
-                        .username(getUser())
-                        .password(getPassword())
-                        .build()
+                    .auth(
+                        BasicAuthConfiguration.builder()
+                            .username(getUser())
+                            .password(getPassword())
+                            .build()
                     )
                     .build()
             )
-            .body(Property.ofValue(
-                Map.of(
-                    "conf", Map.of(
-                        "source", "kestra",
-                        "flow", "airflow",
-                        "namespace", "unittest",
-                        "task", "trigger",
-                        "execution", "123"
+            .body(
+                Property.ofValue(
+                    Map.of(
+                        "conf", Map.of(
+                            "source", "kestra",
+                            "flow", "airflow",
+                            "namespace", "unittest",
+                            "task", "trigger",
+                            "execution", "123"
+                        )
                     )
                 )
-            ))
+            )
             .build();
 
         TriggerDagRun.Output runOutput = task.run(runContext);
@@ -70,24 +76,27 @@ class TriggerDagRunTest {
             .wait(Property.ofValue(true))
             .options(
                 HttpConfiguration.builder()
-                    .auth(BasicAuthConfiguration.builder()
-                        .username(getUser())
-                        .password(getPassword())
-                        .build()
+                    .auth(
+                        BasicAuthConfiguration.builder()
+                            .username(getUser())
+                            .password(getPassword())
+                            .build()
                     )
                     .build()
             )
-            .body(Property.ofValue(
-                Map.of(
-                    "conf", Map.of(
-                        "source", "kestra",
-                        "flow", "airflow",
-                        "namespace", "unittest",
-                        "task", "trigger",
-                        "execution", "123"
+            .body(
+                Property.ofValue(
+                    Map.of(
+                        "conf", Map.of(
+                            "source", "kestra",
+                            "flow", "airflow",
+                            "namespace", "unittest",
+                            "task", "trigger",
+                            "execution", "123"
+                        )
                     )
                 )
-            ))
+            )
             .build();
 
         TriggerDagRun.Output runOutput = task.run(runContext);
