@@ -31,8 +31,8 @@ Infrastructure dependencies (Docker Compose services):
 
 ```
 plugin-airflow/
-├── src/main/java/project/group +/
-├── src/test/java/project/group +/
+├── src/main/java/io/kestra/plugin/airflow/model/
+├── src/test/java/io/kestra/plugin/airflow/model/
 ├── build.gradle
 └── README.md
 ```
