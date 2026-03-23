@@ -49,8 +49,10 @@ import static io.kestra.core.utils.Rethrow.throwSupplier;
                     wait: true
                     pollFrequency: PT1S
                     options:
-                      basicAuthUser: "{{ secret('AIRFLOW_USERNAME') }}"
-                      basicAuthPassword: "{{ secret('AIRFLOW_PASSWORD') }}"
+                      auth:
+                        type: BASIC
+                        username: "{{ secret('AIRFLOW_USERNAME') }}"
+                        password: "{{ secret('AIRFLOW_PASSWORD') }}"
                     body:
                       conf:
                         source: kestra
