@@ -22,6 +22,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwSupplier;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -85,6 +86,7 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
         title = "Airflow DAG ID"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> dagId;
 
     @Schema(
@@ -106,12 +108,14 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
         description = "Default is false; when true, polls until the run is success or failed."
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     private Property<Boolean> wait = Property.ofValue(Boolean.FALSE);
 
     @Schema(
         title = "Custom DAG run payload",
         description = "JSON body sent to Airflow's conf; overrides the default metadata payload."
     )
+    @PluginProperty(group = "main")
     private Property<Map<String, Object>> body;
 
     @Override

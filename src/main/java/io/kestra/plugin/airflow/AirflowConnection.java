@@ -41,18 +41,19 @@ public abstract class AirflowConnection extends Task {
         title = "The base URL of the Airflow instance"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> baseUrl;
 
     @Schema(
         title = "Adds custom headers"
     )
-    @PluginProperty
+    @PluginProperty(group = "advanced")
     private Property<Map<String, String>> headers;
 
     @Schema(
         title = "Request options"
     )
-    @PluginProperty
+    @PluginProperty(group = "advanced")
     protected HttpConfiguration options;
 
     protected DagRunResponse triggerDag(RunContext runContext, String dagId, String requestBody) throws Exception {
