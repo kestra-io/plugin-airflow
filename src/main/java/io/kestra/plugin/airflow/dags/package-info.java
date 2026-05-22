@@ -1,4 +1,5 @@
 @PluginSubGroup(
+    title = "Airflow Dags",
     description = "This sub-group of plugins contains tasks for integrating and triggering Apache Airflow DAGs.",
     categories = { PluginSubGroup.PluginCategory.DATA }
 )
