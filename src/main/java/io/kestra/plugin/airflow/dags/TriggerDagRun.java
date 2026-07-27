@@ -31,7 +31,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @NoArgsConstructor
 @Schema(
     title = "Trigger an Airflow DAG run",
-    description = "Starts a DAG run via the Airflow REST API. Can wait until the run reaches success or failed using 1s polling and a 60m timeout by default; throws if the timeout is exceeded. If no body is provided, sends a default conf with Flow, Namespace, task, and execution identifiers."
+    description = "Starts a DAG run via the Airflow REST API. Can wait until the run reaches success or failed using 1s polling and a 60m timeout by default; throws if the timeout is exceeded. If no body is provided, sends a default conf with the Kestra source, flow, namespace, task, and execution identifiers."
 )
 @Plugin(
     examples = {
