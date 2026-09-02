@@ -4,7 +4,7 @@ Trigger Airflow DAG runs from Kestra flows and optionally wait for completion.
 
 ## Authentication
 
-Set `baseUrl` to your Airflow instance URL (e.g. `http://localhost:8080`). Pass credentials via `options` (e.g. basic auth username and password via `options.auth`) or via custom `headers`. Store secrets in [secrets](https://kestra.io/docs/concepts/secret) and apply connection properties globally with [plugin defaults](https://kestra.io/docs/workflow-components/plugin-defaults).
+Set `baseUrl` to your Airflow instance URL (e.g. `http://localhost:8080`). Pass credentials via `options` (e.g. basic auth username and password via `options.auth`) or via custom `headers`. Store secrets in [secrets](https://kestra.io/docs/concepts/secret) and set connection properties on each task.
 
 ## Tasks
 
