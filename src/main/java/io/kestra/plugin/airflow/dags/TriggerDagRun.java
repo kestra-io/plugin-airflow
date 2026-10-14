@@ -115,7 +115,7 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
 
     @Schema(
         title = "Custom DAG run payload",
-        description = "JSON body sent to Airflow's conf; overrides the default metadata payload."
+        description = "DAG run JSON payload. Overrides the default metadata, which is sent under `conf` when this is omitted."
     )
     @PluginProperty(group = "main")
     private Property<Map<String, Object>> body;
@@ -164,14 +164,14 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
     }
 
     private String buildBody(RunContext runContext) throws JsonProcessingException, IllegalVariableEvaluationException {
-        RunContext.FlowInfo flowInfo = runContext.flowInfo();
+        var flowInfo = runContext.flowInfo();
 
-        var renderedBody = runContext.render(this.body).asMap(String.class, Object.class);
-        if (!renderedBody.isEmpty()) {
-            return objectMapper.writeValueAsString(renderedBody);
+        var rBody = runContext.render(this.body).asMap(String.class, Object.class);
+        if (!rBody.isEmpty()) {
+            return objectMapper.writeValueAsString(rBody);
         }
 
-        Map<String, Object> conf = Map.of(
+        var conf = Map.of(
             "source", "kestra",
             "flow", flowInfo.id(),
             "namespace", flowInfo.namespace(),
@@ -179,7 +179,7 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
             "execution", runContext.getTriggerExecutionId()
         );
 
-        return objectMapper.writeValueAsString(conf);
+        return objectMapper.writeValueAsString(Map.of("conf", conf));
     }
 
     @Getter
