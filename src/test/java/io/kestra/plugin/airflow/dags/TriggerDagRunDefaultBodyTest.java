@@ -1,6 +1,5 @@
 package io.kestra.plugin.airflow.dags;
 
-import java.lang.reflect.Method;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -10,8 +9,9 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 
 import io.kestra.core.context.TestRunContextFactory;
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.flows.Flow;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.RunContext;
+import io.kestra.core.utils.TestsUtils;
 
 import jakarta.inject.Inject;
 
@@ -21,6 +21,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -45,14 +46,21 @@ class TriggerDagRunDefaultBodyTest {
                     """))
         );
 
-        var runContext = runContextFactory.of();
-        setTriggerExecutionId(runContext, "4m8N");
-
         var task = TriggerDagRun.builder()
             .id("run_dag")
+            .type(TriggerDagRun.class.getName())
             .baseUrl(Property.ofValue(wireMock.baseUrl()))
             .dagId(Property.ofValue("example_astronauts"))
             .build();
+
+        var flow = Flow.builder()
+            .id("airflow")
+            .namespace("company.team")
+            .tenantId(MAIN_TENANT)
+            .revision(1)
+            .build();
+        var execution = TestsUtils.mockExecution(flow, Map.of());
+        var runContext = runContextFactory.of(flow, task, execution, TestsUtils.mockTaskRun(execution, task));
 
         var output = task.run(runContext);
 
@@ -63,13 +71,13 @@ class TriggerDagRunDefaultBodyTest {
                     {
                       "conf": {
                         "source": "kestra",
-                        "flow": "id",
-                        "namespace": "namespace",
+                        "flow": "airflow",
+                        "namespace": "company.team",
                         "task": "run_dag",
-                        "execution": "4m8N"
+                        "execution": "%s"
                       }
                     }
-                    """))
+                    """.formatted(execution.getId())))
         );
     }
 
@@ -102,11 +110,5 @@ class TriggerDagRunDefaultBodyTest {
                     }
                     """))
         );
-    }
-
-    private static void setTriggerExecutionId(RunContext runContext, String executionId) throws Exception {
-        Method setter = runContext.getClass().getDeclaredMethod("setTriggerExecutionId", String.class);
-        setter.setAccessible(true);
-        setter.invoke(runContext, executionId);
     }
 }

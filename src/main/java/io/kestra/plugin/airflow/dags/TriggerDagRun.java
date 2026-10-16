@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -22,7 +23,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwSupplier;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -164,22 +164,39 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
     }
 
     private String buildBody(RunContext runContext) throws JsonProcessingException, IllegalVariableEvaluationException {
-        var flowInfo = runContext.flowInfo();
+        RunContext.FlowInfo flowInfo = runContext.flowInfo();
 
-        var rBody = runContext.render(this.body).asMap(String.class, Object.class);
-        if (!rBody.isEmpty()) {
-            return objectMapper.writeValueAsString(rBody);
+        var renderedBody = runContext.render(this.body).asMap(String.class, Object.class);
+        if (!renderedBody.isEmpty()) {
+            return objectMapper.writeValueAsString(renderedBody);
         }
 
-        var conf = Map.of(
+        Map<String, Object> conf = Map.of(
             "source", "kestra",
             "flow", flowInfo.id(),
             "namespace", flowInfo.namespace(),
             "task", this.id,
-            "execution", runContext.getTriggerExecutionId()
+            "execution", executionId(runContext)
         );
 
         return objectMapper.writeValueAsString(Map.of("conf", conf));
+    }
+
+    private static String executionId(RunContext runContext) {
+        var executionId = runContext.taskRunInfo().executionId();
+        if (executionId != null) {
+            return executionId;
+        }
+
+        // 1.3.39 taskRunInfo() reads a top-level executionId key that a task run never sets; the id is under execution.id.
+        if (
+            runContext.getVariables().get("execution") instanceof Map<?, ?> execution
+                && execution.get("id") instanceof String id
+        ) {
+            return id;
+        }
+
+        throw new IllegalStateException("Execution id is not defined for this task run.");
     }
 
     @Getter
