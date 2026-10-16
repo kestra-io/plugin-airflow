@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -22,7 +23,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwSupplier;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -115,7 +115,7 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
 
     @Schema(
         title = "Custom DAG run payload",
-        description = "JSON body sent to Airflow's conf; overrides the default metadata payload."
+        description = "DAG run JSON payload. Overrides the default metadata, which is sent under `conf` when this is omitted."
     )
     @PluginProperty(group = "main")
     private Property<Map<String, Object>> body;
@@ -176,10 +176,27 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
             "flow", flowInfo.id(),
             "namespace", flowInfo.namespace(),
             "task", this.id,
-            "execution", runContext.getTriggerExecutionId()
+            "execution", executionId(runContext)
         );
 
-        return objectMapper.writeValueAsString(conf);
+        return objectMapper.writeValueAsString(Map.of("conf", conf));
+    }
+
+    private static String executionId(RunContext runContext) {
+        var executionId = runContext.taskRunInfo().executionId();
+        if (executionId != null) {
+            return executionId;
+        }
+
+        // 1.3.39 taskRunInfo() reads a top-level executionId key that a task run never sets; the id is under execution.id.
+        if (
+            runContext.getVariables().get("execution") instanceof Map<?, ?> execution
+                && execution.get("id") instanceof String id
+        ) {
+            return id;
+        }
+
+        throw new IllegalStateException("Execution id is not defined for this task run.");
     }
 
     @Getter

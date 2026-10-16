@@ -10,11 +10,15 @@ import io.kestra.core.context.TestRunContextFactory;
 import io.kestra.core.http.client.configurations.BasicAuthConfiguration;
 import io.kestra.core.http.client.configurations.HttpConfiguration;
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.flows.Flow;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.utils.TestsUtils;
 
 import jakarta.inject.Inject;
 
+import static io.kestra.core.tenant.TenantService.MAIN_TENANT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -58,6 +62,41 @@ class TriggerDagRunTest {
                 )
             )
             .build();
+
+        TriggerDagRun.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getDagRunId(), is(notNullValue()));
+        assertThat(runOutput.getState(), is(notNullValue()));
+        assertThat(runOutput.getState(), is(equalToIgnoringCase("queued")));
+    }
+
+    @Test
+    void runWithoutBody() throws Exception {
+        TriggerDagRun task = TriggerDagRun.builder()
+            .id("trigger")
+            .type(TriggerDagRun.class.getName())
+            .baseUrl(Property.ofValue(getBaseUrl()))
+            .dagId(Property.ofValue("tutorial_dag"))
+            .options(
+                HttpConfiguration.builder()
+                    .auth(
+                        BasicAuthConfiguration.builder()
+                            .username(getUser())
+                            .password(getPassword())
+                            .build()
+                    )
+                    .build()
+            )
+            .build();
+
+        Flow flow = Flow.builder()
+            .id("airflow")
+            .namespace("unittest")
+            .tenantId(MAIN_TENANT)
+            .revision(1)
+            .build();
+        Execution execution = TestsUtils.mockExecution(flow, Map.of());
+        RunContext runContext = runContextFactory.of(flow, task, execution, TestsUtils.mockTaskRun(execution, task));
 
         TriggerDagRun.Output runOutput = task.run(runContext);
 
