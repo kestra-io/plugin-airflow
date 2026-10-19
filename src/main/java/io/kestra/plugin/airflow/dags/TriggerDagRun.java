@@ -115,7 +115,7 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
 
     @Schema(
         title = "Custom DAG run payload",
-        description = "DAG run JSON payload. Overrides the default metadata, which is sent under `conf` when this is omitted."
+        description = "Request body for the DAG run, sent as-is, so put run parameters under `conf`. When omitted, Kestra metadata is sent under `conf`."
     )
     @PluginProperty(group = "main")
     private Property<Map<String, Object>> body;
@@ -188,15 +188,8 @@ public class TriggerDagRun extends AirflowConnection implements RunnableTask<Tri
             return executionId;
         }
 
-        // 1.3.39 taskRunInfo() reads a top-level executionId key that a task run never sets; the id is under execution.id.
-        if (
-            runContext.getVariables().get("execution") instanceof Map<?, ?> execution
-                && execution.get("id") instanceof String id
-        ) {
-            return id;
-        }
-
-        throw new IllegalStateException("Execution id is not defined for this task run.");
+        // taskRunInfo() only resolves the execution id from Kestra 2.0, drop this fallback after the bump.
+        return (String) ((Map<?, ?>) runContext.getVariables().get("execution")).get("id");
     }
 
     @Getter

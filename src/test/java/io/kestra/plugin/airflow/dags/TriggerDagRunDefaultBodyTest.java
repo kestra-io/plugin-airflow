@@ -39,12 +39,7 @@ class TriggerDagRunDefaultBodyTest {
 
     @Test
     void shouldNestDefaultMetadataUnderConfWhenBodyIsOmitted() throws Exception {
-        wireMock.stubFor(
-            post(urlEqualTo(DAG_RUNS))
-                .willReturn(okJson("""
-                    {"dag_id":"example_astronauts","dag_run_id":"manual__1","state":"queued"}
-                    """))
-        );
+        stubDagRun("manual__1");
 
         var task = TriggerDagRun.builder()
             .id("run_dag")
@@ -83,15 +78,11 @@ class TriggerDagRunDefaultBodyTest {
 
     @Test
     void shouldSendTheGivenBodyWhenBodyIsSet() throws Exception {
-        wireMock.stubFor(
-            post(urlEqualTo(DAG_RUNS))
-                .willReturn(okJson("""
-                    {"dag_id":"example_astronauts","dag_run_id":"manual__2","state":"queued"}
-                    """))
-        );
+        stubDagRun("manual__2");
 
         var task = TriggerDagRun.builder()
             .id("run_dag")
+            .type(TriggerDagRun.class.getName())
             .baseUrl(Property.ofValue(wireMock.baseUrl()))
             .dagId(Property.ofValue("example_astronauts"))
             .body(Property.ofValue(Map.of("conf", Map.of("dataset", "astronauts"))))
@@ -109,6 +100,15 @@ class TriggerDagRunDefaultBodyTest {
                       }
                     }
                     """))
+        );
+    }
+
+    private static void stubDagRun(String dagRunId) {
+        wireMock.stubFor(
+            post(urlEqualTo(DAG_RUNS))
+                .willReturn(okJson("""
+                    {"dag_id":"example_astronauts","dag_run_id":"%s","state":"queued"}
+                    """.formatted(dagRunId)))
         );
     }
 }

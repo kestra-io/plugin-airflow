@@ -101,7 +101,6 @@ class TriggerDagRunTest {
         TriggerDagRun.Output runOutput = task.run(runContext);
 
         assertThat(runOutput.getDagRunId(), is(notNullValue()));
-        assertThat(runOutput.getState(), is(notNullValue()));
         assertThat(runOutput.getState(), is(equalToIgnoringCase("queued")));
     }
 
