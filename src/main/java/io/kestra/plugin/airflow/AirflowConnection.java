@@ -2,9 +2,11 @@ package io.kestra.plugin.airflow;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.TreeMap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.http.HttpRequest;
 import io.kestra.core.http.HttpResponse;
 import io.kestra.core.http.client.HttpClient;
@@ -100,9 +102,14 @@ public abstract class AirflowConnection extends Task {
             .runContext(runContext);
     }
 
-    private HttpRequest.HttpRequestBuilder getRequestBuilder(RunContext runContext, URI uri) {
-        return HttpRequest.builder()
-            .uri(uri)
-            .addHeader("Content-Type", JSON_CONTENT_TYPE);
+    private HttpRequest.HttpRequestBuilder getRequestBuilder(RunContext runContext, URI uri) throws IllegalVariableEvaluationException {
+        var rHeaders = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+        rHeaders.put("Content-Type", JSON_CONTENT_TYPE);
+        rHeaders.putAll(runContext.render(this.headers).asMap(String.class, String.class));
+
+        var builder = HttpRequest.builder().uri(uri);
+        rHeaders.forEach(builder::addHeader);
+
+        return builder;
     }
 }
